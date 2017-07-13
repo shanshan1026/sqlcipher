@@ -11725,11 +11725,11 @@ fi
 
 
 if test "x${TCLLIBDIR+set}" != "xset" ; then
-  TCLLIBDIR='$(libdir)'
-  for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
-    TCLLIBDIR=$i
-    break
-  done
+  TCLLIBDIR='$(libdir)/../tcl/lib'
+  #for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
+    #TCLLIBDIR=$i
+    #break
+  #done
   TCLLIBDIR="${TCLLIBDIR}/sqlite3"
 fi
 

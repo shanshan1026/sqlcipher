@@ -1,0 +1,113 @@
+HCIROOT=`echo "${1}" | sed 's:\\\:/:g'`
+export HCIROOT
+#echo "1=${1}"
+#echo "HCIROOT=${HCIROOT}"
+
+CC=${2}
+arch=${3}
+
+case $arch in
+    Windows_NT)  CPP="cl -E"; export CPP;;
+    *) ;;
+esac
+export CC
+
+TOP=`pwd | sed 's/\/cloverleaf-external.*$//'`
+export TOP
+case "`uname`" in
+    CYGWIN*) TOP=`cygpath -m ${TOP}`;;
+    *) echo 'Not in Cygwin';;
+esac
+export TOP
+
+BASE=${TOP}/cloverleaf-external
+export BASE
+#echo "BASE is ${BASE}"
+
+SSL_TOP=${BASE}/openssl-1.0.2d
+export SSL_TOP
+
+case ${CLTARGET} in
+    x86)  TCL_RELEASE="Release_VC12";;
+    x64)  TCL_RELEASE="Release_AMD64_VC12";;
+    *) TCL_RELEASE="Release_VC12";;
+esac
+
+case $arch in
+    Windows_NT)    TCL_TOP=${BASE}/tcl8.6.3/win;  TCLSH_CMD=${TCL_TOP}/${TCL_RELEASE}/tclsh86t.exe;;
+    Linux)         TCL_TOP=${BASE}/tcl8.6.3/unix; TCLSH_CMD=${TCL_TOP}/tclsh;;
+    SunOS*)        TCL_TOP=${BASE}/tcl8.6.3/unix; TCLSH_CMD="LD_LIBRARY_PATH=${TCL_TOP}; export LD_LIBRARY_PATH; ${TCL_TOP}/tclsh";;
+    AIX*)          TCL_TOP=${BASE}/tcl8.6.3/unix; TCLSH_CMD=${TCL_TOP}/tclsh;;
+    *)             TCL_TOP=${BASE}/tcl8.6.3/unix; TCLSH_CMD=${TCL_TOP}/tclsh;;
+esac
+TCL_INC=${TCL_TOP}/../generic
+export TCL_TOP TCLSH_CMD
+
+case $arch in
+    Windows_NT)  ;;
+    HP-UX*)     SHLIB_PATH="${SSL_TOP}:${TCL_TOP}";       export SHLIB_PATH;;
+    *)          LD_LIBRARY_PATH="${SSL_TOP}:${TCL_TOP}";  export LD_LIBRARY_PATH;;
+esac
+
+echo "---SHLIB_PATH is ${SHLIB_PATH}"
+
+case $arch in
+    Windows_NT) LIB_EXTENSION=lib; LIB_PREFIX=;    SHLIB_EXTENSION=dll; SSL_LIBBASE=ssleay32; SSL2_LIBBASE=libeay32; SSL_LIBDIR=${SSL_TOP}/out32dll;;
+    HP-UX*)     LIB_EXTENSION=a;   LIB_PREFIX=lib; SHLIB_EXTENSION=sl;  SSL_LIBBASE=ssl;      SSL2_LIBBASE=crypto;   SSL_LIBDIR=${SSL_TOP};; 
+    *)          LIB_EXTENSION=a;   LIB_PREFIX=lib; SHLIB_EXTENSION=so;  SSL_LIBBASE=ssl;      SSL2_LIBBASE=crypto;   SSL_LIBDIR=${SSL_TOP};;
+esac
+export LIB_EXTENSION LIB_PREFIX SHLIB_EXTENSION SSL_LIBBASE SSL2_LIBBASE SSL_LIBDIR
+
+SSL_LIBFILE=${SSL_LIBDIR}/${LIB_PREFIX}${SSL_LIBBASE}.${LIB_EXTENSION}
+SSL2_LIBFILE=${SSL_LIBDIR}/${LIB_PREFIX}${SSL2_LIBBASE}.${LIB_EXTENSION}
+SSL_LIBREF="-L${SSL_LIBDIR} -l${SSL_LIBBASE}"
+SSL2_LIBREF="-L${SSL_LIBDIR} -l${SSL2_LIBBASE}"
+
+export SSL_LIBFILE SSL2_LIBFILE
+
+#echo "SSL are ${SSL_LIBFILE} ${SSL2_LIBFILE}"
+
+case $arch in
+    Windows_NT)  ARCHLIBS="${SSL_LIBFILE} ${SSL2_LIBFILE} user32.lib Advapi32.lib Gdi32.lib";;
+    *)           ARCHLIBS="${SSL_LIBREF} ${SSL2_LIBREF}";;
+esac
+export ARCHLIBS
+
+#echo "ARCHLIBS is ${ARCHLIBS}"
+
+if test "x${HCIROOT}" = "x"
+then
+    echo "ERROR:  HCIROOT must be first parameter"
+    exit 1
+fi
+
+LD_LIBRARY_PATH="${SSL_TOP}:${TCL_TOP}:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH
+
+case $arch in
+    AIX*)        FLAGS="--enable-tempstore=yes --enable-shared --enable-threadsafe --disable-readline --enable-tcl --with-tcl=${TCL_TOP} --disable-amalgamation";;
+    *)           FLAGS="--enable-tempstore=yes --enable-shared --enable-threadsafe --disable-readline --enable-tcl --with-tcl=${TCL_TOP}";;
+esac
+
+case $arch in
+    Windows_NT)  CFLAGS="";;
+    HP-UX*)      CFLAGS="-O -DHPUX +DA2.0"; LDFLAGS=-Wl,+s; export CFLAGS LDFLAGS;;
+    SunOS*)      CFLAGS="-O -DSUN -D_REENTRANT";;
+    AIX*)        CFLAGS="-qcpluscmt -O -D__unix__ -D_LARGE_FILES -I./ext/fts3";;
+    *)           CFLAGS="-O";;
+esac
+
+case $arch in
+    Windows_NT)  SSL_INCLUDES=${SSL_TOP}/inc32;;
+    *)           SSL_INCLUDES=${SSL_TOP}/include;;
+esac
+
+CFLAGS="${CFLAGS} -DSQLITE_MAX_ATTACHED=62 -DSQLITE_HAS_CODEC -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS -DSQLITE_ENABLE_LOAD_EXTENSION=1 -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_ENABLE_JSON1 -I${SSL_INCLUDES} -I${TCL_INC}"
+
+sh ./configure ${FLAGS} \
+    --prefix=${HCIROOT} \
+    --enable-load-extension \
+    --enable-json1 \
+    CFLAGS="${CFLAGS}" \
+    LDFLAGS="${ARCHLIBS}"
+
