@@ -15,8 +15,8 @@
 # The toplevel directory of the source tree.  This is the directory
 # that contains this "Makefile.in" and the "configure.in" script.
 #
-TOP = @abs_srcdir@
-
+TOP = @srcdir@
+include ${TOP}/../../cloverleaf/stdMakefile.inc
 
 # C Compiler and options for use in building executables that
 # will run on the platform that is doing the build.
@@ -179,6 +179,11 @@ ALLOWRELEASE = @ALLOWRELEASE@
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(LTCOMPILE_EXTRAS)
 LTLINK = $(LIBTOOL) --mode=link $(TCC) $(LTCOMPILE_EXTRAS) @LDFLAGS@ $(LTLINK_EXTRAS)
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
+
+LTLINK_FLAG = -no-undefined
+ifeq (Windows_NT,$(ARCH))
+LTLINK_FLAG =
+endif
 
 # You should not have to change anything below this line
 ###############################################################################
@@ -611,7 +616,7 @@ sqlite3.pc: $(TOP)/sqlite3.pc.in
 	./config.status
 
 libsqlite3.la:	$(LIBOBJ)
-	$(LTLINK) -no-undefined -o $@ $(LIBOBJ) $(TLIBS) \
+	$(LTLINK) $(LTLINK_FLAG) -o $@ $(LIBOBJ) $(TLIBS) \
 		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"
 
 ifeq (Windows_NT,$(ARCH))
@@ -623,7 +628,7 @@ endif
 endif		
 		
 libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
-	$(LTLINK) -no-undefined -o $@ tclsqlite.lo \
+	$(LTLINK) $(LTLINK_FLAG) -o $@ tclsqlite.lo \
 		libsqlite3.la $(TCL_STUB_LIB_SPEC) $(TLIBS) \
 		-rpath "$(TCLLIBDIR)" \
 		-version-info "8:6:8" \
@@ -633,9 +638,7 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
 		-o $@ $(TOP)/src/shell.c libsqlite3.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
-ifeq (Windows_NT,$(ARCH))
-	$(EMBED_EXE_MANI)
-endif
+
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
 	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
 
@@ -720,9 +723,7 @@ sqlite3.lo:	sqlite3.c
 lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o $@ $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
-ifeq (Windows_NT,$(ARCH))
-	$(EMBED_EXE_MANI)
-endif
+
 
 # Rules to build individual *.o files from generated *.c files. This
 # applies to:
@@ -982,9 +983,7 @@ tclsqlite-stubs.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite-shell.lo \
 		 libsqlite3.la $(LIBTCL)
-ifeq (Windows_NT,$(ARCH))
-	$(EMBED_EXE_MANI)
-endif
+
 
 # Rules to build opcodes.c and opcodes.h
 #
@@ -1010,9 +1009,6 @@ sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)/tool/mkkeywordhash.c
-ifeq (Windows_NT,$(ARCH))
-	$(EMBED_EXE_MANI)
-endif
 	./mkkeywordhash$(BEXE) >keywordhash.h
 
 
@@ -1146,9 +1142,6 @@ TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
-ifeq (Windows_NT,$(ARCH))
-	$(EMBED_EXE_MANI)
-endif
 
 # A very detailed test running most or all test cases
 fulltest:	$(TESTPROGS) fuzztest
@@ -1207,9 +1200,7 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
 
 sqlite3_analyzer$(TEXE): sqlite3_analyzer.c
 	$(LTLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
-ifeq (Windows_NT,$(ARCH))
-	$(EMBED_EXE_MANI)
-endif
+
 showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.lo
 	$(LTLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(TLIBS)
 

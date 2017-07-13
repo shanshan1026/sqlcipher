@@ -8815,9 +8815,34 @@ fi
       # Microsoft Visual C++.
       # hardcode_libdir_flag_spec is actually meaningless, as there is
       # no search path for DLLs.
+	  echo "cc_basename is $cc_basename" > "test.out";
       case $cc_basename in
+      cl_cygwin*)
+	  		  echo "cc_basename is our msvc wrapper $cc_basename" > "test.out";
+	# Assume MSVC wrapper
+	hardcode_libdir_flag_spec=' '
+	allow_undefined_flag=unsupported
+	# Tell ltmain to make .lib files, not .a files.
+	libext=lib
+	# Tell ltmain to make .dll files, not .so files.
+	shrext_cmds=.dll
+	# FIXME: Setting linknames here is a bad hack.
+	archive_cmds='$CC -o $lib $libobjs $compiler_flags `func_echo_all "$deplibs" | $SED '\''s/ -lc$//'\''` -link -dll~linknames='
+	# The linker will automatically build a .lib file if we build a DLL.
+	old_archive_from_new_cmds='true'
+	# FIXME: Should let the user specify the lib program.
+	old_archive_cmds='lib -OUT:$oldlib$oldobjs$old_deplibs'
+	enable_shared_with_static_runtimes=yes
+	postlink_cmds='lt_outputfile="@OUTPUT@"~
+          lt_tool_outputfile="@TOOL_OUTPUT@"~
+          if test : != "$MANIFEST_TOOL" && test -f "$lt_outputfile.manifest"; then
+            $MANIFEST_TOOL -manifest "$lt_tool_outputfile.manifest" -outputresource:"$lt_tool_outputfile" || exit 1;
+            $RM "$lt_outputfile.manifest";
+          fi'	
+	;;	  
       cl*)
 	# Native MSVC
+		  echo "cc_basename is native msvc $cc_basename" > "test.out";
 	hardcode_libdir_flag_spec=' '
 	allow_undefined_flag=unsupported
 	always_export_symbols=yes
@@ -8838,6 +8863,8 @@ fi
           linknames='
 	# The linker will not automatically build a static lib if we build a DLL.
 	# _LT_TAGVAR(old_archive_from_new_cmds, )='true'
+	# FIXME: Should let the user specify the lib program.
+	old_archive_cmds='lib -OUT:$oldlib$oldobjs$old_deplibs'
 	enable_shared_with_static_runtimes=yes
 	exclude_expsyms='_NULL_IMPORT_DESCRIPTOR|_IMPORT_DESCRIPTOR_.*'
 	export_symbols_cmds='$NM $libobjs $convenience | $global_symbol_pipe | $SED -e '\''/^[BCDGRS][ ]/s/.*[ ]\([^ ]*\)/\1,DATA/'\'' | $SED -e '\''/^[AITW][ ]/s/.*[ ]//'\'' | sort | uniq > $export_symbols'
@@ -8858,6 +8885,7 @@ fi
           fi'
 	;;
       *)
+	  		  echo "cc_basename is msvc wrapper $cc_basename" > "test.out";
 	# Assume MSVC wrapper
 	hardcode_libdir_flag_spec=' '
 	allow_undefined_flag=unsupported
@@ -9893,7 +9921,7 @@ cygwin* | mingw* | pw32* | cegcc*)
     # Native MSVC
     libname_spec='$name'
     soname_spec='$libname`echo $release | $SED -e 's/[.]/-/g'`$versuffix$shared_ext'
-    library_names_spec='$libname.dll.lib'
+    library_names_spec=''
 
     case $build_os in
     mingw*)
@@ -11725,11 +11753,11 @@ fi
 
 
 if test "x${TCLLIBDIR+set}" != "xset" ; then
-  TCLLIBDIR='$(libdir)/../tcl/lib'
-  #for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
-    #TCLLIBDIR=$i
-    #break
-  #done
+  TCLLIBDIR='$(libdir)'
+  for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}` ; do
+    TCLLIBDIR=$i
+    break
+  done
   TCLLIBDIR="${TCLLIBDIR}/sqlite3"
 fi
 
@@ -12036,7 +12064,12 @@ if ${ac_cv_lib_crypto_HMAC_Init_ex+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
+if test cygwin = "$host_os"; then :
+#LIBS="-lcrypto  $LIBS"
+else
 LIBS="-lcrypto  $LIBS"
+fi  
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -12071,7 +12104,11 @@ if test "x$ac_cv_lib_crypto_HMAC_Init_ex" = xyes; then :
 #define HAVE_LIBCRYPTO 1
 _ACEOF
 
-  LIBS="-lcrypto $LIBS"
+if test cygwin = "$host_os"; then :
+#LIBS="-lcrypto  $LIBS"
+else
+LIBS="-lcrypto  $LIBS"
+fi
 
 else
   as_fn_error $? "Library crypto not found. Install openssl!\"" "$LINENO" 5
