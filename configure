@@ -12054,8 +12054,10 @@ else
 fi
 
     else
-        CFLAGS+=" -DSQLCIPHER_CRYPTO_OPENSSL"
-        BUILD_CFLAGS+=" -DSQLCIPHER_CRYPTO_OPENSSL"
+#        CFLAGS+=" -DSQLCIPHER_CRYPTO_OPENSSL"
+#        BUILD_CFLAGS+=" -DSQLCIPHER_CRYPTO_OPENSSL"
+    CFLAGS="$CFLAGS -DSQLCIPHER_CRYPTO_OPENSSL"
+    BUILD_CFLAGS="$BUILD_CFLAGS -DSQLCIPHER_CRYPTO_OPENSSL"
 	      { $as_echo "$as_me:${as_lineno-$LINENO}: result: openssl" >&5
 $as_echo "openssl" >&6; }
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HMAC_Init_ex in -lcrypto" >&5
@@ -13095,7 +13097,8 @@ else
 fi
 
 if test "${enable_json1}" = "yes" ; then
-  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_JSON1"
+#  OPT_FEATURE_FLAGS+=" -DSQLITE_ENABLE_JSON1"
+  OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS -DSQLITE_ENABLE_JSON1"
 fi
 
 #########
